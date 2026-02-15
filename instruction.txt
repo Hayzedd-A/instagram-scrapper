@@ -1,0 +1,65 @@
+I want to build an instagram scrapper using apify. 
+The app is for a content creator to easily get to know all posted videos about a specific topic and to make some personal decision. 
+The flow of the app is that, the frontend sends a query like: the search term, the recency, min views, min followers and then the app should return all neccessary data including the captions.
+frontend sample request
+{
+  searchTerm: string,
+  recencyDays: number,
+  minViews: number,
+  minFollowers: number,
+  profile: {
+    recencyPost: number,
+  }
+}
+
+
+Step 1 — Frontend creates job
+POST /api/instagram/search
+
+
+Backend:
+
+Validate input
+Create DB job record
+Start Apify actor
+Store runId internally
+
+Return:
+
+{
+  "jobId": "internal_job_id",
+  "status": "PROCESSING"
+}
+
+Step 2 — Backend handles Apify fully
+
+Backend:
+
+Poll Apify run
+
+When finished:
+Fetch dataset
+Filter
+Normalize
+Save result in DB
+Update job status to SUCCESS
+
+
+Step 3 — Frontend polls backend
+GET /api/instagram/job/:jobId
+
+
+Response:
+
+{
+  "status": "PROCESSING"
+}
+
+
+or
+
+{
+  "status": "SUCCESS",
+  "data": [...]
+}
+
