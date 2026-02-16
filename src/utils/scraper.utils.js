@@ -135,15 +135,42 @@ const normalizePostData = (rawPost) => {
       : undefined,
     hashtags: extractHashtags(caption),
     mentions: extractMentions(caption),
-    isVideo: rawPost.isVideo || rawPost.is_video || false,
-    videoUrl: rawPost.videoUrl || rawPost.video_url || "",
-    videoDuration: rawPost.videoDuration || rawPost.video_duration || 0,
+    firstComment:
+      rawPost.firstComment ||
+      rawPost.edgeMediaToComment?.edges?.[0]?.node?.text ||
+      "",
+    latestComments:
+      rawPost.latestComments ||
+      rawPost.edgeMediaToComment?.edges?.[0]?.node?.text ||
+      "",
+    images: rawPost.images || rawPost.image_versions || [],
+    isVideo:
+      rawPost.isVideo ||
+      rawPost.is_video ||
+      rawPost.type === "Video" ||
+      rawPost.__typename === "GraphVideo" ||
+      false,
+    videoUrl:
+      rawPost.videoUrl ||
+      rawPost.video_url ||
+      rawPost.video_versions?.[0]?.url ||
+      "",
+    videoDuration:
+      rawPost.videoDuration ||
+      rawPost.video_duration ||
+      rawPost.video_duration_secs ||
+      0,
     videoViewCount:
       rawPost.videoViewCount ||
       rawPost.video_view_count ||
       rawPost.videoViewsCount ||
+      rawPost.view_count ||
       0,
+    videoPlayCount: rawPost.videoPlayCount || rawPost.video_play_count || 0,
+    igPlayCount: rawPost.igPlayCount || rawPost.ig_play_count || 0,
     childPosts: rawPost.childPosts || [],
+    musicInfo: rawPost.musicInfo || rawPost.music_info || null,
+    productType: rawPost.productType || rawPost.product_type || null,
     scrapedAt: new Date(),
   };
 };

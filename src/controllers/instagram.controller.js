@@ -95,9 +95,17 @@ async function processSearchAsync(
         if ((post.videoViewCount || 0) < minViews) return false;
       }
 
+      // Ensure only videos/reels are included
+      if (
+        !post.isVideo &&
+        post.type !== "Video" &&
+        post.type !== "GraphVideo"
+      ) {
+        return false;
+      }
+
       return true;
     });
-    console.log("filteredPosts", JSON.stringify(filteredPosts));
 
     // Get unique owner usernames for follower filtering
     const ownerUsernames = [
@@ -167,8 +175,15 @@ async function processSearchAsync(
       displayUrl: post.displayUrl,
       hashtags: post.hashtags,
       mentions: post.mentions,
+      firstComment: post.firstComment,
+      latestComments: post.latestComments,
+      images: post.images,
+      musicInfo: post.musicInfo,
+      productType: post.productType,
+      igPlayCount: post.igPlayCount,
+      inputUrl: post.inputUrl,
+      videoUrl: post.videoUrl,
     }));
-    console.log("results", JSON.stringify(results));
 
     // Update job with results
     job.status = "SUCCESS";

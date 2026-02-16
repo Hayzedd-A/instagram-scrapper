@@ -20,7 +20,8 @@ const config = {
   apify: {
     token: process.env.APIFY_TOKEN,
     scraperActorId:
-      process.env.INSTAGRAM_SCRAPER_ACTOR_ID || "apify/instagram-scraper",
+      process.env.INSTAGRAM_SCRAPER_ACTOR_ID ||
+      "apify/instagram-hashtag-scraper",
     memoryMbytes: 4096,
     timeoutSecs: 3600,
   },

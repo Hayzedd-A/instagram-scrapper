@@ -63,3 +63,98 @@ or
   "data": [...]
 }
 
+
+
+There is a new api to handle the scraping process, it is at /api/instagram/search
+all payload should be converted to the format below 
+{
+  "searchTerm": "string",
+  "limit": 100,
+  "sortBy": "TOP_POSTS" | "RECENT_POSTS",
+  "searchMode": "HASHTAG" | "USER",
+  "recencyDays": number,
+  "minViews": number,
+  "minFollowers": number,
+  "profile": {
+    "recencyPost": number,
+  }
+}
+
+this will return a result as 
+{
+  "jobId": "195979a0-acb6-4f68-817d-a3f7f3bdd3c2",
+  "status": "PROCESSING"
+}
+
+then use the job id to check the status of the job at /api/instagram/job/:jobId
+response could be 
+{
+  "status": "PROCESSING"
+}
+or
+{
+  "status": "FAILED",
+  "error": "string"
+}
+
+or
+
+{
+"status": "SUCCESS",
+"data": [
+    {
+        "postId": "3833095122268016117",
+        "shortCode": "DUx47SBEU31",
+        "url": "https://www.instagram.com/p/DUx47SBEU31/",
+        "caption": "Aapke brand ki digital pehchan, ab hogi aur bhi behtareen! 🚀\n\nHum lekar aa rahe hain ek complete solution aapke business ko online grow karne ke liye. Ab ek hi jagah milegi aapko har wo cheez jo aapke brand ko chahiye:\n\n🎨 Creative Posters – Jo scroll karne walo ko rok dein.\n🎬 Professional Videos – Jo aapki kahani bayaan karein.\n🌐 Web Development – Jo aapki digital dukan ko premium banaye.\n\nTaiyaar ho jaiye apne business ki nayi shuruat ke liye. 🏗️✨\n\nCOMING SOON! ⏳\n\nHashtags:\n#ComingSoon #DigitalMarketing #WebDevelopment #SocialMediaGrowth #GraphicDesign #VideoProduction #BusinessGrowth #CreativeAgency",
+        "ownerUsername": "official_websaathis",
+        "ownerFullName": "Websaathis",
+        "ownerFollowers": 0,
+        "likesCount": 0,
+        "commentsCount": 0,
+        "viewsCount": 0,
+        "timestamp": "2026-02-15T13:02:58.507Z",
+        "type": "Image",
+        "displayUrl": "https://scontent-vie1-1.cdninstagram.com/v/t51.82787-15/626293134_18030652787596511_3057475396201649290_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=111&ig_cache_key=MzgzMzA5NTEyMjI2ODAxNjExNw%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6InhwaWRzLjEwODB4MTM1MC5zZHIuQzMifQ%3D%3D&_nc_ohc=VcwG5Tez8-8Q7kNvwG3X63J&_nc_oc=AdncoGpXLc8U-cp1xg0SwUWUZU25qHpVDT8xXvEf1uBEdzzfhVpev-9eQoHitDnwqjE&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&se=7&_nc_ht=scontent-vie1-1.cdninstagram.com&_nc_gid=DfTAXjwGvnR-EUqPEg4yCQ&oh=00_Afv5JrLRx43FYkRvdGfuoIa3UCFF78rHXERtAPWp2Y5PPg&oe=6997AE81",
+        "hashtags": [
+            "comingsoon",
+            "digitalmarketing",
+            "webdevelopment",
+            "socialmediagrowth",
+            "graphicdesign",
+            "videoproduction",
+            "businessgrowth",
+            "creativeagency"
+        ],
+        "mentions": [],
+        "_id": "6991c402b174f2bb3b9990fd"
+    },
+    {
+        "postId": "3833094723205142637",
+        "shortCode": "DUx41eXERht",
+        "url": "https://www.instagram.com/p/DUx41eXERht/",
+        "caption": "Your website might be pretty…\n\nBut is it converting?\n\nIf your site is not bringing traffic, capturing leads, or ranking on search engines, it is just an online brochure.\n\nOmega Inc. builds websites designed for performance, SEO, and measurable growth.\n\nPretty is nice. Profitable is better.\n\n🌐 omegaicorporations.com\n\n#WebsiteDesign #SEO #LeadGeneration #WebDevelopment #BusinessWebsite #DigitalMarketing #ConversionOptimization #UKTech",
+        "ownerUsername": "omegaincorporations",
+        "ownerFullName": "Omega Incorporations",
+        "ownerFollowers": 0,
+        "likesCount": 0,
+        "commentsCount": 1,
+        "viewsCount": 0,
+        "timestamp": "2026-02-15T13:02:58.508Z",
+        "type": "Image",
+        "displayUrl": "https://scontent-vie1-1.cdninstagram.com/v/t51.82787-15/635130702_17984102813955969_6936723106902098033_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=106&ig_cache_key=MzgzMzA5NDcyMzIwNTE0MjYzNw%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6InhwaWRzLjEwODB4MTM1MC5zZHIuQzMifQ%3D%3D&_nc_ohc=3wLOP9JddIYQ7kNvwEkQoqI&_nc_oc=Admz4EcEbMnANpPTetXPs10OoC8tXFXywHJRSPC7I9f0212ngljyl-d6GVd1DxW9cbw&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&se=7&_nc_ht=scontent-vie1-1.cdninstagram.com&_nc_gid=DfTAXjwGvnR-EUqPEg4yCQ&oh=00_AfskMCo-Wr6mXB3tibTeFFkATXndbDEQP8ZpgHQ40s6w2Q&oe=6997AC93",
+        "hashtags": [
+            "websitedesign",
+            "seo",
+            "leadgeneration",
+            "webdevelopment",
+            "businesswebsite",
+            "digitalmarketing",
+            "conversionoptimization",
+            "uktech"
+        ],
+        "mentions": [],
+        "_id": "6991c402b174f2bb3b9990fe"
+    }
+  ]
+}

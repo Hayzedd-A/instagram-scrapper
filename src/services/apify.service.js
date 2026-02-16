@@ -180,29 +180,39 @@ class ApifyService {
 
     logger.info(`Scraping hashtag: #${cleanHashtag}, limit: ${limit}`);
 
+    const input = {
+      hashtags: [cleanHashtag],
+      resultsType: "reels",
+      resultsLimit: limit,
+    };
+
+    console.log("Actor Input:", JSON.stringify(input, null, 2));
+
     try {
       const run = await retryWithBackoff(async () => {
-        return await this.client.actor(config.apify.scraperActorId).call(
-          {
-            directUrls: [
-              `https://www.instagram.com/explore/tags/${cleanHashtag}/`,
-            ],
-            resultsType: "posts",
-            resultsLimit: limit,
-            searchType: "hashtag",
-          },
-          {
+        return await this.client
+          .actor(config.apify.scraperActorId)
+          .call(input, {
             memory: config.apify.memoryMbytes,
             timeout: config.apify.timeoutSecs,
-          },
-        );
+          });
       });
 
       const { items } = await this.client
         .dataset(run.defaultDatasetId)
         .listItems();
 
-      const posts = items.map((item) => normalizePostData(item));
+      console.log("Raw Items:", JSON.stringify(items, null, 2));
+
+      if (items.length > 0 && items[0].error) {
+        throw new Error(
+          `Apify Error: ${items[0].errorDescription || items[0].error}`,
+        );
+      }
+
+      const posts = items
+        .filter((item) => !item.error && (item.id || item.shortCode))
+        .map((item) => normalizePostData(item));
 
       logger.info(
         `Successfully scraped ${posts.length} posts from hashtag: #${cleanHashtag}`,
