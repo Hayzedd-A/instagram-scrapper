@@ -83,6 +83,14 @@ const postSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    videoPlayCount: {
+      type: Number,
+      default: 0,
+    },
+    igPlayCount: {
+      type: Number,
+      default: 0,
+    },
     childPosts: [
       {
         type: String,
@@ -98,6 +106,10 @@ const postSchema = new mongoose.Schema(
     metadata: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
+    },
+    transcript: {
+      type: String,
+      default: "",
     },
   },
   {

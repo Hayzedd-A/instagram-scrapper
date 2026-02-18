@@ -8,7 +8,13 @@
     "dev": "nodemon src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["instagram", "scraper", "apify", "mongodb", "api"],
+  "keywords": [
+    "instagram",
+    "scraper",
+    "apify",
+    "mongodb",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
@@ -20,6 +26,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^7.3.1",
     "express-validator": "^7.0.1",
+    "franc": "^6.2.0",
     "mongoose": "^8.3.2",
     "winston": "^3.13.0"
   },

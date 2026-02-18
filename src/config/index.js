@@ -22,6 +22,15 @@ const config = {
     scraperActorId:
       process.env.INSTAGRAM_SCRAPER_ACTOR_ID ||
       "apify/instagram-hashtag-scraper",
+    profileActorId:
+      process.env.INSTAGRAM_PROFILE_ACTOR_ID ||
+      "apify/instagram-profile-scraper",
+    profilePostActorId:
+      process.env.INSTAGRAM_PROFILE_POST_ACTOR_ID ||
+      "apify/instagram-profile-post-scraper",
+    videoTranscriptActorId:
+      process.env.VIDEO_TRANSCRIPT_ACTOR_ID ||
+      "apify/instagram-video-transcript-scraper",
     memoryMbytes: 4096,
     timeoutSecs: 3600,
   },

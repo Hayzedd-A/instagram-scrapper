@@ -13,7 +13,7 @@ Create a search job for content creators to find Instagram posts matching specif
   "searchTerm": "webdevelopment",
   "recencyDays": 30,
   "minViews": 1000,
-  "minFollowers": 5000,
+  "maxFollowers": 5000,
   "profile": {
     "recencyPost": 7
   }
@@ -25,7 +25,7 @@ Create a search job for content creators to find Instagram posts matching specif
 - `searchTerm` (string, required): Hashtag to search (without #)
 - `recencyDays` (number, optional): Only posts from last N days (default: 30, max: 365)
 - `minViews` (number, optional): Minimum video views (default: 0)
-- `minFollowers` (number, optional): Minimum follower count of post owner (default: 0)
+- `maxFollowers` (number, optional): Minimum follower count of post owner (default: 0)
 - `profile.recencyPost` (number, optional): Additional recency filter for profile posts
 
 **Response:** (202 Accepted)
@@ -52,7 +52,7 @@ Poll for job status and get results when complete.
     "searchTerm": "webdevelopment",
     "recencyDays": 30,
     "minViews": 1000,
-    "minFollowers": 5000
+    "maxFollowers": 5000
   },
   "createdAt": "2026-02-15T00:00:00.000Z"
 }
@@ -116,7 +116,7 @@ Poll for job status and get results when complete.
        searchTerm: "webdevelopment",
        recencyDays: 7,
        minViews: 1000,
-       minFollowers: 5000,
+       maxFollowers: 5000,
      }),
    });
    const { jobId } = await response.json();
@@ -162,7 +162,7 @@ Final results include all necessary data for content creators to make decisions.
   "searchTerm": "webdevelopment",
   "recencyDays": 7,
   "minViews": 10000,
-  "minFollowers": 0
+  "maxFollowers": 0
 }
 ```
 
@@ -173,7 +173,7 @@ Final results include all necessary data for content creators to make decisions.
   "searchTerm": "tech",
   "recencyDays": 30,
   "minViews": 0,
-  "minFollowers": 50000
+  "maxFollowers": 50000
 }
 ```
 
@@ -184,7 +184,7 @@ Final results include all necessary data for content creators to make decisions.
   "searchTerm": "ai",
   "recencyDays": 3,
   "minViews": 5000,
-  "minFollowers": 10000,
+  "maxFollowers": 10000,
   "profile": {
     "recencyPost": 1
   }

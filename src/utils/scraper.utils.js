@@ -125,7 +125,7 @@ const normalizePostData = (rawPost) => {
       rawPost.comments_count ||
       rawPost.edgeMediaToComment?.count ||
       0,
-    timestamp: timestamp,
+    timestamp: rawPost.timestamp || timestamp,
     location: rawPost.location
       ? {
           name: rawPost.location.name,
@@ -171,6 +171,7 @@ const normalizePostData = (rawPost) => {
     childPosts: rawPost.childPosts || [],
     musicInfo: rawPost.musicInfo || rawPost.music_info || null,
     productType: rawPost.productType || rawPost.product_type || null,
+    transcript: rawPost.transcript || rawPost.text || "",
     scrapedAt: new Date(),
   };
 };

@@ -31,7 +31,7 @@ const validateSearchRequest = [
     .isInt({ min: 0 })
     .withMessage("Min views must be a positive number")
     .toInt(),
-  body("minFollowers")
+  body("maxFollowers")
     .optional()
     .isInt({ min: 0 })
     .withMessage("Min followers must be a positive number")
@@ -63,6 +63,19 @@ const validateJobId = [
 ];
 
 /**
+ * Validation for transcript request
+ */
+const validateTranscriptRequest = [
+  body("postUrl")
+    .trim()
+    .notEmpty()
+    .withMessage("Post URL is required")
+    .isURL()
+    .withMessage("Invalid post URL format"),
+  validate,
+];
+
+/**
  * @route   POST /api/instagram/search
  * @desc    Create Instagram search job for content creators
  * @access  Public
@@ -83,6 +96,18 @@ router.get(
   "/job/:jobId",
   validateJobId,
   instagramController.getSearchJobStatus,
+);
+
+/**
+ * @route   POST /api/instagram/transcript
+ * @desc    Scrape transcript from post
+ * @access  Public
+ */
+router.post(
+  "/transcript",
+  scrapingLimiter,
+  validateTranscriptRequest,
+  instagramController.scrapeTranscript,
 );
 
 module.exports = router;

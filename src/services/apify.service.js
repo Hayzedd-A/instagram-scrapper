@@ -59,52 +59,55 @@ class ApifyService {
 
   /**
    * Scrape Instagram profile
-   * @param {string} username
+   * @param {string} usernames
    * @returns {Promise<object>}
    */
-  async scrapeProfile(username) {
+  async scrapeProfile(usernames) {
     if (!this.isConfigured()) {
       throw new Error(
         "Apify is not configured. Please set APIFY_TOKEN in environment variables.",
       );
     }
 
-    logger.info(`Scraping profile: ${username}`);
+    logger.info(`Scraping profile details: ${usernames}`);
+
+    const input = {
+      usernames: [...usernames],
+      includeTranscript: true,
+      resultsLimit: 1,
+    };
+
+    console.log("Profile Actor Input:", JSON.stringify(input, null, 2));
 
     try {
       const run = await retryWithBackoff(async () => {
-        return await this.client.actor(config.apify.scraperActorId).call(
-          {
-            directUrls: [`https://www.instagram.com/${username}/`],
-            resultsType: "profiles",
-            resultsLimit: 1,
-            searchType: "user",
-            searchLimit: 1,
-          },
-          {
+        return await this.client
+          .actor(config.apify.profileActorId)
+          .call(input, {
             memory: config.apify.memoryMbytes,
             timeout: config.apify.timeoutSecs,
-          },
-        );
+          });
       });
 
       const { items } = await this.client
         .dataset(run.defaultDatasetId)
         .listItems();
 
+      logger.info(`Profile Raw Items: ${JSON.stringify(items)}`);
+
       if (!items || items.length === 0) {
-        throw new Error(`Profile not found: ${username}`);
+        throw new Error(`Profile not found: ${usernames}`);
       }
 
-      const profileData = normalizeProfileData(items[0]);
+      const profileData = items.map(normalizeProfileData);
 
-      logger.info(`Successfully scraped profile: ${username}`);
+      logger.info(`Successfully scraped profile: ${usernames}`);
       return {
         runId: run.id,
         data: profileData,
       };
     } catch (error) {
-      logger.error(`Error scraping profile ${username}:`, error);
+      logger.error(`Error scraping profile ${usernames}:`, error);
       throw error;
     }
   }
@@ -126,7 +129,7 @@ class ApifyService {
 
     try {
       const run = await retryWithBackoff(async () => {
-        return await this.client.actor(config.apify.scraperActorId).call(
+        return await this.client.actor(config.apify.profilePostActorId).call(
           {
             directUrls: [`https://www.instagram.com/${username}/`],
             resultsType: "posts",
@@ -144,6 +147,8 @@ class ApifyService {
       const { items } = await this.client
         .dataset(run.defaultDatasetId)
         .listItems();
+
+      console.log("Raw Items:", JSON.stringify(items[0]));
 
       const posts = items.map((item) => normalizePostData(item));
 
@@ -202,7 +207,7 @@ class ApifyService {
         .dataset(run.defaultDatasetId)
         .listItems();
 
-      console.log("Raw Items:", JSON.stringify(items, null, 2));
+      // console.log("Raw Items:", JSON.stringify(items, null, 2));
 
       if (items.length > 0 && items[0].error) {
         throw new Error(
@@ -224,6 +229,52 @@ class ApifyService {
       };
     } catch (error) {
       logger.error(`Error scraping hashtag #${cleanHashtag}:`, error);
+      throw error;
+    }
+  }
+
+  async scrapeProfileReels(usernames) {
+    if (!this.isConfigured()) {
+      throw new Error(
+        "Apify is not configured. Please set APIFY_TOKEN in environment variables.",
+      );
+    }
+
+    logger.info(
+      `Scraping profile reel and transcript posts from: ${usernames}`,
+    );
+
+    try {
+      const run = await retryWithBackoff(async () => {
+        return await this.client.actor(config.apify.profilePostActorId).call(
+          {
+            username: [...usernames],
+            includeTranscripts: true,
+          },
+          {
+            memory: config.apify.memoryMbytes,
+            timeout: config.apify.timeoutSecs,
+          },
+        );
+      });
+
+      const { items } = await this.client
+        .dataset(run.defaultDatasetId)
+        .listItems();
+
+      logger.info(`Profile Reel Raw Items: ${JSON.stringify(items)}`);
+
+      const posts = items.map((item) => normalizePostData(item));
+
+      logger.info(
+        `Successfully scraped ${posts.length} posts from: ${usernames}`,
+      );
+      return {
+        runId: run.id,
+        data: posts,
+      };
+    } catch (error) {
+      logger.error(`Error scraping posts from ${usernames}:`, error);
       throw error;
     }
   }
@@ -323,6 +374,97 @@ class ApifyService {
       throw error;
     }
   }
+  /**
+   * Scrape reels from a profile and their transcripts
+   * @param {string} username
+   * @param {number} limit
+   * @returns {Promise<object>}
+   */
+  // async scrapeProfileReels(username, limit = 10) {
+  //   if (!this.isConfigured()) {
+  //     throw new Error(
+  //       "Apify is not configured. Please set APIFY_TOKEN in environment variables.",
+  //     );
+  //   }
+
+  //   logger.info(
+  //     `Scraping reels and transcripts for profile: ${username}, limit: ${limit}`,
+  //   );
+
+  //   try {
+  //     // 1. Scrape Reels (Posts)
+  //     // Using the same actor as scrapePosts but specifically for reels if possible,
+  //     // or just scrape posts and filter. The profile-post-scraper creates a list of posts.
+  //     // We'll use the existing scrapePosts for this step.
+  //     const postsResult = await this.scrapePosts(username, limit);
+  //     let posts = postsResult.data;
+
+  //     // Filter for videos/reels only
+  //     posts = posts.filter(
+  //       (post) =>
+  //         post.isVideo ||
+  //         post.type === "Video" ||
+  //         post.type === "Reel" ||
+  //         post.productType === "clips",
+  //     );
+
+  //     if (posts.length === 0) {
+  //       return {
+  //         runId: postsResult.runId,
+  //         data: [],
+  //       };
+  //     }
+
+  //     // 2. Scrape Transcripts
+  //     // Extract URLs for transcript scraping
+  //     const postUrls = posts.map((post) => post.url);
+
+  //     // We need to batch transcript scraping if there are many URLs
+  //     // The transcript actor might have limits, but let's try sending all for now or batch if needed.
+  //     // Assuming scrapeTranscript handles arrays.
+  //     const transcriptResult = await this.scrapeTranscript(postUrls);
+  //     const transcripts = transcriptResult.data; // These are normalized posts with transcripts
+
+  //     // 3. Merge Transcript Data
+  //     // Create a map of url -> transcript text
+  //     const transcriptMap = {};
+  //     transcripts.forEach((item) => {
+  //       // The normalized data from transcript scraper might put transcript in specific field
+  //       // Let's assume the actor returns it and we mapped it.
+  //       // Wait, normalizePostData doesn't seem to explicitly handle 'transcript' field from the transcript actor result
+  //       // if it's not standard.
+  //       // I should check what scrapeTranscript returns. It maps existing items using normalizePostData.
+  //       // I'll assume 'transcript' or 'text' is available.
+  //       // If normalizePostData doesn't include 'transcript', I might need to update it or manually handle it here.
+  //       // Looking at instruction.txt, the sample response has "transcript": "Ever since I was a kid..."
+  //       // So I'll assume I need to attach it.
+  //       if (item.transcript || item.text) {
+  //         transcriptMap[item.url] = item.transcript || item.text;
+  //       }
+  //     });
+
+  //     // Update posts with transcript
+  //     const mergedPosts = posts.map((post) => {
+  //       return {
+  //         ...post,
+  //         transcript: transcriptMap[post.url] || "",
+  //       };
+  //     });
+
+  //     return {
+  //       runId: postsResult.runId, // Returning the runId of the post scrape
+  //       data: mergedPosts,
+  //     };
+  //   } catch (error) {
+  //     logger.error(
+  //       `Error scraping profile reels for ${username}:`,
+  //       error.message,
+  //     );
+  //     // Don't fail the whole process if reels fail, maybe just return empty or throw depending on requirement.
+  //     // For now, rethrow to be handled by caller
+  //     throw error;
+  //   }
+  // }
 }
 
 // Export singleton instance

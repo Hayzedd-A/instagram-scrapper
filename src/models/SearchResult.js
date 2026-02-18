@@ -21,7 +21,7 @@ const searchResultSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
-      minFollowers: {
+      maxFollowers: {
         type: Number,
         default: 0,
       },
@@ -29,6 +29,10 @@ const searchResultSchema = new mongoose.Schema(
         recencyPost: {
           type: Number,
           default: null,
+        },
+        multiplier: {
+          type: Number,
+          default: 1,
         },
       },
     },
@@ -63,10 +67,12 @@ const searchResultSchema = new mongoose.Schema(
         mentions: [String],
         firstComment: String,
         latestComments: [String],
+        rawLatestComments: [Object],
         images: [String],
         musicInfo: Object,
         productType: String,
         igPlayCount: Number,
+        transcript: String,
       },
     ],
     totalResults: {
