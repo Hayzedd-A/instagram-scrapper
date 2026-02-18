@@ -6,6 +6,7 @@ const logger = require("../utils/logger");
 const { asyncHandler } = require("../middleware/errorHandler");
 const { filterEnglishCaptions } = require("../utils/index.utils");
 const Post = require("../models/Post");
+const config = require("../config");
 
 /**
  * Create Instagram search job for content creators
@@ -74,7 +75,8 @@ async function processSearchAsync(
     // 1. Hashtag Search (get as many as possible to filter)
     // The instruction says "Maybe about 5000 or more", but we should respect the limit pass/config or use a high default for this step
     // We'll use a larger limit for the initial scrape to ensure we have enough after filtering
-    const initialScrapeLimit = Math.max(limit * 50, 5000); // Scrape more to filter down
+    const initialScrapeLimit =
+      config.nodeEnv === "development" ? 100 : Math.max(limit * 50, 5000); // Scrape more to filter down
 
     logger.info(
       `Step 1: Scraping hashtag: #${searchTerm}, limit: ${initialScrapeLimit}`,
@@ -143,16 +145,16 @@ async function processSearchAsync(
     );
 
     // 3. Save filtered posts to database
-    if (filteredPosts.length > 0) {
-      const bulkOps = filteredPosts.map((post) => ({
-        updateOne: {
-          filter: { postId: post.postId },
-          update: { $set: post },
-          upsert: true,
-        },
-      }));
-      await Post.bulkWrite(bulkOps);
-    }
+    // if (filteredPosts.length > 0) {
+    //   const bulkOps = filteredPosts.map((post) => ({
+    //     updateOne: {
+    //       filter: { postId: post.postId },
+    //       update: { $set: post },
+    //       upsert: true,
+    //     },
+    //   }));
+    //   await Post.bulkWrite(bulkOps);
+    // }
 
     // 5. Fetch Profile Data (scrapeProfile)
     const uniqueUsernames = [
@@ -316,6 +318,7 @@ async function processSearchAsync(
 
     // Map to the schema expected by SearchResult.results
     const mappedResults = allReels.map((post) => ({
+      jobId: job.jobId,
       postId: post.postId,
       shortCode: post.shortCode,
       url: post.url,
@@ -333,7 +336,7 @@ async function processSearchAsync(
       hashtags: post.hashtags,
       mentions: post.mentions,
       firstComment: post.firstComment,
-      rawLatestComments: post.latestComments,
+      // latestComments: post.latestComments,
       images: post.images,
       musicInfo: post.musicInfo,
       productType: post.productType,
@@ -344,6 +347,16 @@ async function processSearchAsync(
       // transcript is not in SearchResult schema yet, but it's in Post schema.
       // We can add it or just leave it out of this summary.
     }));
+
+    const bulkOps = mappedResults.map((post) => ({
+      updateOne: {
+        filter: { postId: post.postId },
+        update: { $set: post },
+        upsert: true,
+      },
+    }));
+
+    await Post.bulkWrite(bulkOps);
 
     job.results = mappedResults;
     job.totalResults = result.data.length; // Initial count
@@ -414,17 +427,18 @@ const getSearchJobStatus = asyncHandler(async (req, res) => {
     // Group results by owner
     const groupedResults = {};
 
+    const posts = await Post.find({ jobId: jobId });
+    console.log("posts", posts.length);
+
     // Helper to get profile data efficiently - we will fetch from Profile collection
-    const uniqueUsernames = [
-      ...new Set(job.results.map((r) => r.ownerUsername)),
-    ];
+    const uniqueUsernames = [...new Set(posts.map((r) => r.ownerUsername))];
     const profiles = await Profile.find({ username: { $in: uniqueUsernames } });
     const profileMap = profiles.reduce((acc, p) => {
       acc[p.username] = p;
       return acc;
     }, {});
 
-    job.results.forEach((post) => {
+    posts.forEach((post) => {
       if (!groupedResults[post.ownerUsername]) {
         groupedResults[post.ownerUsername] = {
           profile: profileMap[post.ownerUsername] || {
@@ -441,7 +455,6 @@ const getSearchJobStatus = asyncHandler(async (req, res) => {
     const recencyPostMonth = new Date(
       now.setMonth(now.getMonth() - recencyPost),
     );
-    console.log({ recencyPost, recencyPostMonth });
     // Filter each profile posts based on recencyPost and multiplier
     Object.values(groupedResults).forEach((group) => {
       group.posts = group.posts.filter((post) => {

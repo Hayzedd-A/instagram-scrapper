@@ -2,6 +2,11 @@ const mongoose = require("mongoose");
 
 const postSchema = new mongoose.Schema(
   {
+    jobId: {
+      type: String,
+      required: true,
+      index: true,
+    },
     postId: {
       type: String,
       required: true,
@@ -22,6 +27,10 @@ const postSchema = new mongoose.Schema(
     ownerFullName: {
       type: String,
       default: "",
+    },
+    ownerFollowers: {
+      type: Number,
+      default: 0,
     },
     caption: {
       type: String,
@@ -79,11 +88,11 @@ const postSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    videoViewCount: {
+    viewsCount: {
       type: Number,
       default: 0,
     },
-    videoPlayCount: {
+    playCount: {
       type: Number,
       default: 0,
     },
@@ -91,6 +100,16 @@ const postSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    firstComment: {
+      type: String,
+      default: "",
+    },
+    images: [
+      {
+        type: String,
+        default: "",
+      },
+    ],
     childPosts: [
       {
         type: String,
@@ -99,6 +118,10 @@ const postSchema = new mongoose.Schema(
         videoUrl: String,
       },
     ],
+    musicInfo: {
+      type: Object,
+      default: {},
+    },
     scrapedAt: {
       type: Date,
       default: Date.now,
