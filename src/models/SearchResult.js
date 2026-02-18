@@ -96,6 +96,11 @@ const searchResultSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
+      index: { expires: "2d" }, // '2d' = 2 days
+    },
   },
   {
     timestamps: true,

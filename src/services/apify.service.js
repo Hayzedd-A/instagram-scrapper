@@ -262,8 +262,6 @@ class ApifyService {
         .dataset(run.defaultDatasetId)
         .listItems();
 
-      logger.info(`Profile Reel Raw Items: ${JSON.stringify(items)}`);
-
       const posts = items.map((item) => normalizePostData(item));
 
       logger.info(

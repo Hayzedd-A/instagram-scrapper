@@ -134,6 +134,11 @@ const postSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
+      index: { expires: "2d" }, // '2d' = 2 days
+    },
   },
   {
     timestamps: true,

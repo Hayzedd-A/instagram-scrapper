@@ -70,6 +70,11 @@ const profileSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
+      index: { expires: "2d" }, // '2d' = 2 days
+    },
   },
   {
     timestamps: true,
