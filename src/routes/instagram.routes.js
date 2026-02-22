@@ -106,7 +106,7 @@ router.get(
 router.post(
   "/transcript",
   scrapingLimiter,
-  validateTranscriptRequest,
+  // validateTranscriptRequest,
   instagramController.scrapeTranscript,
 );
 

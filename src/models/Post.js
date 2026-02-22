@@ -134,6 +134,14 @@ const postSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    transcriptHook: {
+      type: String,
+      default: "",
+    },
+    transcriptTemplate: {
+      type: String,
+      default: "",
+    },
     lastUpdated: {
       type: Date,
       default: Date.now,

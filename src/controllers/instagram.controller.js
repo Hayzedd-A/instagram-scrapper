@@ -4,10 +4,15 @@ const Profile = require("../models/Profile");
 const apifyService = require("../services/apify.service");
 const logger = require("../utils/logger");
 const { asyncHandler } = require("../middleware/errorHandler");
-const { filterEnglishCaptions } = require("../utils/index.utils");
+const {
+  filterEnglishCaptions,
+  filterEnglishTranscript,
+} = require("../utils/index.utils");
 const Post = require("../models/Post");
 const config = require("../config");
-
+const OpenAITranscriptAnalyzer = require("../services/openAI.service");
+const { processTranscripts } = require("../utils/transcript.utils");
+const TranscriptAnalyzer = new OpenAITranscriptAnalyzer();
 /**
  * Create Instagram search job for content creators
  */
@@ -50,6 +55,7 @@ const createSearchJob = asyncHandler(async (req, res) => {
     minViews,
     maxFollowers,
     limit,
+    profile.recencyPost,
   );
 
   res.status(202).json({
@@ -68,6 +74,7 @@ async function processSearchAsync(
   minViews,
   maxFollowers,
   limit,
+  recencyWeek,
 ) {
   try {
     const job = await SearchResult.findOne({ jobId });
@@ -76,7 +83,7 @@ async function processSearchAsync(
     // The instruction says "Maybe about 5000 or more", but we should respect the limit pass/config or use a high default for this step
     // We'll use a larger limit for the initial scrape to ensure we have enough after filtering
     const initialScrapeLimit =
-      config.nodeEnv === "development" ? 100 : Math.max(limit * 50, 5000); // Scrape more to filter down
+      config.nodeEnv === "development" ? 200 : Math.max(limit * 50, 5000); // Scrape more to filter down
 
     logger.info(
       `Step 1: Scraping hashtag: #${searchTerm}, limit: ${initialScrapeLimit}`,
@@ -227,9 +234,22 @@ async function processSearchAsync(
     if (usernames.length > 0) {
       try {
         // 2. Batch Scrape all reels at once
-        const reelsResult = await apifyService.scrapeProfileReels(usernames);
-        const allScrapedReels = reelsResult.data; // Expecting an array of all posts
-
+        const reelsResult = await apifyService.scrapeProfileReels(
+          usernames,
+          recencyWeek,
+        );
+        let allScrapedReels = reelsResult.data.filter((post) =>
+          filterEnglishTranscript(post),
+        ); // Expecting an array of all posts
+        logger.info(
+          `Filtered down to ${allScrapedReels.length} posts based on English transcript`,
+        );
+        // implement trascript here
+        logger.info(
+          `Getting transcript hook and template for ${allScrapedReels.length}`,
+        );
+        allScrapedReels = await processTranscripts(allScrapedReels);
+        logger.info("Completed transcript hook and template");
         // 3. Perform a massive Bulk Write for all posts across all users
         if (allScrapedReels.length > 0) {
           const postBulkOps = allScrapedReels.map((post) => ({
@@ -261,60 +281,10 @@ async function processSearchAsync(
       }
     }
 
-    // for (const userProfile of validProfiles) {
-    //   try {
-    //     const reelsResult = await apifyService.scrapeProfileReels(
-    //       userProfile.username,
-    //     );
-    //     const reels = reelsResult.data;
-
-    //     // 8. Save profile reels to database
-    //     if (reels.length > 0) {
-    //       const bulkOps = reels.map((post) => ({
-    //         updateOne: {
-    //           filter: { postId: post.postId },
-    //           update: { $set: post },
-    //           upsert: true,
-    //         },
-    //       }));
-    //       await Post.bulkWrite(bulkOps);
-    //     }
-
-    //     // We'll attach the reels to the profile result
-    //     finalResults.push({
-    //       profile: userProfile,
-    //       posts: reels,
-    //     });
-    //   } catch (e) {
-    //     logger.error(
-    //       `Failed to scrape reels for ${userProfile.username}: ${e.message}`,
-    //     );
-    //   }
-    // }
-
     // Update job with results
     job.status = "SUCCESS";
-    // We store the structured results in the `results` field.
-    // Since `results` schema in SearchResult is an array of Post-like objects, this might fail validation
-    // if we try to push { profile: ..., posts: ... }.
-    // We strictly defined the schema for `results`.
-    // We should probably update the `results` schema or use `metadata` field or just store the "inputUrl" as the profile and abuse the schema?
-    // No, better to update SearchResult schema?
-    // Or, we can just save the jobId in the Posts and Profiles and just specific query them in getStatus.
-    //
-    // Let's look at SearchResult schema again. `results` is `[ { ...post fields... } ]`.
-    // It filters simple objects.
-    // I will use `metadata` to store the grouped results or just rely on the controller to group them from the `results` (which are posts).
-    // EXCEPT: The instruction says "fetch profile reels... save... return structured grouped".
-    // Does it mean return ALL the reels from the profile, or just the ones that matched?
-    // "7. fetch profile reels... 8. save... 9. return grouped".
-    // This implies we return the reels we just fetched.
 
-    // Attempt: Store strictly the POSTS in `job.results`.
-    // And in `getSearchJobStatus`, we fetch those posts, and also fetch their owners (profiles), and group them.
-    // This keeps schema valid.
-
-    const allReels = finalResults.flatMap((item) => item.posts);
+    let allReels = finalResults.flatMap((item) => item.posts);
 
     // Map to the schema expected by SearchResult.results
     const mappedResults = allReels.map((post) => ({
@@ -344,6 +314,8 @@ async function processSearchAsync(
       inputUrl: post.inputUrl,
       videoUrl: post.videoUrl,
       transcript: post.transcript || "",
+      transcriptHook: post.transcriptHook || "",
+      transcriptTemplate: post.transcriptTemplate || "",
       // transcript is not in SearchResult schema yet, but it's in Post schema.
       // We can add it or just leave it out of this summary.
     }));
@@ -498,7 +470,8 @@ const getSearchJobStatus = asyncHandler(async (req, res) => {
 const scrapeTranscript = asyncHandler(async (req, res) => {
   const { postUrl } = req.body;
 
-  const result = await apifyService.scrapeTranscript([postUrl]);
+  // const result = await apifyService.scrapeProfileReels([postUrl], 4);
+  const result = await TranscriptAnalyzer.analyzeTranscript(postUrl);
 
   res.json({
     status: "SUCCESS",

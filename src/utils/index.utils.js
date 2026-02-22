@@ -36,4 +36,8 @@ const filterEnglishCaptions = (item) => {
   return isEnglishAdvanced(item.caption);
 };
 
-module.exports = { filterEnglishCaptions };
+const filterEnglishTranscript = (item) => {
+  return isEnglishAdvanced(item.transcript);
+};
+
+module.exports = { filterEnglishCaptions, filterEnglishTranscript };

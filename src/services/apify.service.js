@@ -233,7 +233,7 @@ class ApifyService {
     }
   }
 
-  async scrapeProfileReels(usernames) {
+  async scrapeProfileReels(usernames, recencyWeek = 52) {
     if (!this.isConfigured()) {
       throw new Error(
         "Apify is not configured. Please set APIFY_TOKEN in environment variables.",
@@ -249,7 +249,8 @@ class ApifyService {
         return await this.client.actor(config.apify.profilePostActorId).call(
           {
             username: [...usernames],
-            includeTranscripts: true,
+            includeTranscript: true,
+            onlyPostsNewerThan: `${recencyWeek} weeks`,
           },
           {
             memory: config.apify.memoryMbytes,
@@ -261,6 +262,8 @@ class ApifyService {
       const { items } = await this.client
         .dataset(run.defaultDatasetId)
         .listItems();
+
+      logger.info(`Items: ${JSON.stringify(items, null, 2)}`);
 
       const posts = items.map((item) => normalizePostData(item));
 
