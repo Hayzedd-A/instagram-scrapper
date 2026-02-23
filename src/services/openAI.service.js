@@ -10,7 +10,7 @@ if (!OPENAI_API_KEY) {
 class OpenAITranscriptAnalyzer {
   constructor(apiKey = OPENAI_API_KEY) {
     this.apiKey = apiKey;
-    this.baseUrl = "https://api.openai.com/v1/responses";
+    this.baseUrl = "https://api.openai.com/v1/chat/completions";
   }
 
   async analyzeTranscript(transcript) {
@@ -26,17 +26,14 @@ Your task is to analyze trading-related transcripts (ICT, SMC, price action, mod
 ## **PROCESS (INTERNAL — DO NOT EXPLAIN)**
 
 1. **Identify the hook**
-
    * Select the opening sentence(s) designed to stop scrolling.
    * Prioritise hooks that include:
-
      * Confidence or authority (“printing again”, “this never fails”)
      * Pattern interrupts (“surprise, surprise”, “everyone misses this”)
      * Time compression (“under 60 seconds”)
      * Results (“paid again”, “clean win”, “perfect execution”)
 
 2. **Abstract the hook into a template**
-
    * Preserve the **sentence structure and flow**.
    * Replace only **specific trading details** with placeholders.
    * Do **not** paraphrase or improve wording.
@@ -68,12 +65,12 @@ Your task is to analyze trading-related transcripts (ICT, SMC, price action, mod
 
 ## **Output Format (STRICT)**
 
-Always return **only** a JSON object in the following format.
+Always return a JSON object in the following format.
 No explanations. No extra text. No code blocks.
 
 {
   "hook": "[exact hook extracted from the transcript]",
-  "template hook": "[strict structural template with inferred placeholders]"
+  "template_hook": "[strict structural template with inferred placeholders]"
 }
 
 ---
@@ -81,12 +78,10 @@ No explanations. No extra text. No code blocks.
 ## **Day-Trading Bias Rules**
 
 * Assume the audience is:
-
   * Retail traders
   * ICT / SMC learners
   * Futures / Forex / indices traders
 * Templates should naturally fit content about:
-
   * Liquidity sweeps
   * Models & setups
   * Entries, stops, targets
@@ -97,36 +92,25 @@ No explanations. No extra text. No code blocks.
 ## **Failure Handling**
 
 * If the transcript lacks a clear hook, infer the **most likely trading hook**.
-* Still preserve realistic trading language and structure.
-*`;
+* Still preserve realistic trading language and structure.`;
 
     const userPrompt = `Here is the transcript \n ''' \n${transcript}\n'''`;
 
     try {
       const payload = {
-        model: "gpt-4o", // or "gpt-4-vision-preview"
-        input: [
+        model: "gpt-4o",
+        messages: [
           {
             role: "system",
-            content: [{ type: "input_text", text: systemPrompt }],
+            content: systemPrompt,
           },
           {
             role: "user",
-            content: [
-              { type: "input_text", text: userPrompt },
-              //   {
-              //     type: "input_image",
-              //     image_url: imageUrl,
-              //     detail: "high", // Use "high" for detailed analysis
-              //     // : {
-              //     //   url: imageUrl,
-              //     // }
-              //   },
-            ],
+            content: userPrompt,
           },
         ],
-        // max_tokens: 800,
-        temperature: 0.3, // Lower for more consistent results
+        response_format: { type: "json_object" },
+        temperature: 0.3,
       };
 
       console.log("Sending transcript to OpenAI for template hook...");
@@ -136,25 +120,23 @@ No explanations. No extra text. No code blocks.
           Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
         },
-        timeout: 60000, // 60 seconds
+        timeout: 60000,
       });
 
-      const result = response.data.output?.[0]?.content[0]?.text || "";
-      console.log(
-        "raw response from openAI: ",
-        response.data.output[0].content,
-      );
-      if (!result) {
-        throw new Error("No description received from OpenAI");
+      const messageContent = response.data.choices?.[0]?.message?.content;
+      console.log("raw response from openAI content: ", messageContent);
+
+      if (!messageContent) {
+        throw new Error("No response received from OpenAI");
       }
-      const { hook } = JSON.parse(result);
-      const template = JSON.parse(result)["template hook"];
+
+      const result = JSON.parse(messageContent);
       console.log("Transcript hook and template Generated:", result);
 
       return {
         success: true,
-        hook,
-        template,
+        hook: result.hook,
+        template: result.template_hook,
         usage: response.data.usage,
       };
     } catch (error) {
